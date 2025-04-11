@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Download, Settings } from 'lucide-react';
+import { Modal } from './Modal';
 
 interface ExportOptionsProps {
   onExport: (options: { filename: string; quality: string }) => void;

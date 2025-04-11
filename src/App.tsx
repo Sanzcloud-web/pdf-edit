@@ -16,7 +16,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { PDFDocument } from 'pdf-lib';
-import { Upload, Trash2, Download, X, Undo2, Redo2, RotateCcw } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster, toast } from 'react-hot-toast';
 import { PageThumbnail } from './components/PageThumbnail';
@@ -25,6 +25,7 @@ import { ExportOptions } from './components/ExportOptions';
 import { Toolbar } from './components/Toolbar';
 import { TrashBin } from './components/TrashBin';
 import { DragOverlay as CustomDragOverlay } from './components/DragOverlay';
+import { DropIndicator } from './components/DropIndicator';
 
 interface Page {
   id: string;
@@ -44,6 +45,9 @@ function App() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [exportMode, setExportMode] = useState<'all' | 'selection'>('all');
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [dropPosition, setDropPosition] = useState<'before' | 'after' | null>(null);
+
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -117,8 +121,35 @@ function App() {
     setActiveId(event.active.id);
   };
 
+  const handleDragOver = (event: any) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      setDropTargetId(over.id);
+      
+      // Calculer si l'indicateur doit être affiché avant ou après la page cible
+      if (over.rect) {
+        const overRect = over.rect;
+        const middleY = overRect.top + overRect.height / 2;
+        
+        // Si le pointeur est au-dessus de la moitié supérieure, placer avant
+        // Sinon, placer après
+        if (event.clientY < middleY) {
+          setDropPosition('before');
+        } else {
+          setDropPosition('after');
+        }
+      }
+    } else {
+      setDropTargetId(null);
+      setDropPosition(null);
+    }
+  };
+
   const handleDragEnd = (event: any) => {
     setActiveId(null);
+    setDropTargetId(null);
+    setDropPosition(null);
     const { active, over } = event;
     if (active.id !== over.id) {
       setPages((pages) => {
@@ -129,6 +160,12 @@ function App() {
         return newPages;
       });
     }
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    setDropTargetId(null);
+    setDropPosition(null);
   };
 
   const handlePageSelect = (pageId: string) => {
@@ -243,13 +280,16 @@ function App() {
           </div>
 
           <motion.div
-            {...getRootProps()}
-            className={`relative border-2 border-dashed rounded-xl p-12 mb-8 text-center transition-colors ${
-              isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
-            }`}
+            className="relative mb-8"
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
           >
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
+                isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
+              }`}
+            >
             <input {...getInputProps()} />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -261,31 +301,50 @@ function App() {
                 Glissez-déposez des fichiers PDF ici, ou cliquez pour sélectionner
               </p>
             </motion.div>
+            </div>
           </motion.div>
 
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
           >
             <SortableContext items={pages.map((p) => p.id)} strategy={rectSortingStrategy}>
-              <motion.div
-                className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6"
-                layout
-              >
-                <AnimatePresence>
-                  {pages.map((page) => (
-                    <PageThumbnail
-                      key={page.id}
-                      page={page}
-                      isSelected={selectedPages.has(page.id)}
-                      onSelect={() => handlePageSelect(page.id)}
-                      onPreview={() => setPreviewPage(page)}
-                    />
-                  ))}
-                </AnimatePresence>
-              </motion.div>
+            <motion.div
+  className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6"
+  layout
+>
+  <AnimatePresence>
+    {pages.map((page, index) => (
+      <React.Fragment key={page.id}>
+        {/* Affiche l'indicateur avant la page si nécessaire */}
+        {dropTargetId === page.id && dropPosition === 'before' && (
+          <DropIndicator isVisible={true} />
+        )}
+        
+        <PageThumbnail
+          page={page}
+          isSelected={selectedPages.has(page.id)}
+          onSelect={() => handlePageSelect(page.id)}
+          onPreview={() => setPreviewPage(page)}
+        />
+        
+        {/* Affiche l'indicateur après la page si nécessaire */}
+        {dropTargetId === page.id && dropPosition === 'after' && (
+          <DropIndicator isVisible={true} />
+        )}
+        
+        {/* Affiche un indicateur à la fin si nous survolons la dernière page */}
+        {index === pages.length - 1 && dropTargetId === page.id && dropPosition === 'after' && (
+          <DropIndicator isVisible={true} />
+        )}
+      </React.Fragment>
+    ))}
+  </AnimatePresence>
+</motion.div>
             </SortableContext>
 
             <DragOverlay>
