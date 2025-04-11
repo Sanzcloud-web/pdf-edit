@@ -115,27 +115,36 @@ function App() {
         </motion.div>
       </div>
 
-      {previewPage && (
-        <Modal onClose={() => setPreviewPage(null)}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-2xl shadow-2xl p-6 max-w-4xl w-full"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                Page {previewPage.number}
-              </h2>
-            </div>
-            <iframe
-              src={previewPage.thumbnail}
-              className="w-full h-[80vh] rounded-lg"
-              title={`Page ${previewPage.number}`}
-            />
-          </motion.div>
-        </Modal>
-      )}
+{previewPage && (
+  <Modal onClose={() => setPreviewPage(null)}>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="bg-white rounded-2xl shadow-2xl p-6 max-w-4xl w-full"
+    >
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-semibold text-gray-800">
+          Page {previewPage.number}
+        </h2>
+      </div>
+      {/* Remplacer iframe par object */}
+      <object
+        data={previewPage.thumbnail}
+        type="application/pdf"
+        className="w-full h-[80vh] rounded-lg"
+        style={{
+          border: 'none',
+          background: 'white'
+        }}
+      >
+        <div className="flex items-center justify-center h-full bg-gray-100">
+          <p className="text-gray-500">Impossible d'afficher le PDF</p>
+        </div>
+      </object>
+    </motion.div>
+  </Modal>
+)}
 
       <ExportModal
         isOpen={showExportModal}

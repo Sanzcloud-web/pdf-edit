@@ -14,7 +14,8 @@ interface PageThumbnailProps {
   isSelected: boolean;
   onSelect: () => void;
   onPreview: () => void;
-  onRotate?: (pageId: string, degrees: number) => void; // Corrigé pour accepter tous les degrés
+  onRotate?: (pageId: string, degrees: number) => void;
+  isDragging?: boolean;
 }
 
 export function PageThumbnail({ 
@@ -22,7 +23,8 @@ export function PageThumbnail({
   isSelected, 
   onSelect, 
   onPreview,
-  onRotate 
+  onRotate,
+  isDragging = false
 }: PageThumbnailProps) {
   const {
     attributes,
@@ -35,19 +37,18 @@ export function PageThumbnail({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0 : 1
   };
 
   const [showRotateControls, setShowRotateControls] = useState(false);
 
-  // Fonction pour gérer la rotation
   const handleRotate = (e: React.MouseEvent, degrees: number) => {
-    e.stopPropagation(); // Empêcher le déclenchement du onPreview
+    e.stopPropagation();
     if (onRotate) {
       onRotate(page.id, degrees);
     }
   };
 
-  // Calcul des rotations suivantes
   const getNextRotation = (current: number = 0, increment: number): number => {
     return (current + increment) % 360;
   };
@@ -57,7 +58,7 @@ export function PageThumbnail({
       ref={setNodeRef}
       style={style}
       initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={{ opacity: isDragging ? 0 : 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
       className={`relative group rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all ${
         isSelected ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-blue-200'
@@ -84,7 +85,6 @@ export function PageThumbnail({
         <Move size={16} className="text-gray-600" />
       </motion.div>
 
-      {/* Contrôles de rotation */}
       {showRotateControls && onRotate && (
         <div className="absolute top-10 right-2 z-10 bg-white bg-opacity-90 rounded-lg shadow-md p-1 opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-1">
           <motion.button
@@ -110,18 +110,27 @@ export function PageThumbnail({
 
       <motion.div
         onClick={onPreview}
-        className="aspect-[3/4] cursor-pointer group-hover:brightness-95 transition-all"
+        className="aspect-[3/4] cursor-pointer group-hover:brightness-95 transition-all bg-white"
         whileHover={{ scale: 1.02 }}
         style={{
           transform: `rotate(${page.rotation || 0}deg)`,
           transition: 'transform 0.3s ease'
         }}
       >
-        <iframe
-          src={page.thumbnail}
-          className="w-full h-full pointer-events-none"
-          title={`Page ${page.number}`}
-        />
+        {/* Remplacer iframe par object */}
+        <object
+          data={page.thumbnail}
+          type="application/pdf"
+          className="w-full h-full"
+          style={{
+            border: 'none',
+            background: 'white'
+          }}
+        >
+          <div className="flex items-center justify-center h-full bg-gray-100">
+            <p className="text-gray-500">Impossible d'afficher le PDF</p>
+          </div>
+        </object>
       </motion.div>
 
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">

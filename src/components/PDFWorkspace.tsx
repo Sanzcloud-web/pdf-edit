@@ -1,4 +1,4 @@
-// Dans src/components/PDFWorkspace.tsx
+// Dans src/components/PDFWorkspace.tsx - Modification pour corriger l'effet visuel du drag-and-drop
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,7 +21,7 @@ import { PageThumbnail } from './PageThumbnail';
 import { DropIndicator } from './DropIndicator';
 import { DragOverlay as CustomDragOverlay } from './DragOverlay';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
-import { Page } from '../types'; // Importer Page du fichier types principal
+import { Page } from '../types';
 
 interface PDFWorkspaceProps {
   pages: Page[];
@@ -29,7 +29,7 @@ interface PDFWorkspaceProps {
   onPageSelect: (pageId: string) => void;
   onPreviewPage: (page: Page) => void;
   onReorderPages: (oldIndex: number, newIndex: number) => void;
-  onRotatePage?: (pageId: string, degrees: number) => void; // Corrigé pour accepter n'importe quel nombre
+  onRotatePage?: (pageId: string, degrees: number) => void;
   thumbnailSize?: number;
   onChangeThumbnailSize?: (size: number) => void;
 }
@@ -41,7 +41,7 @@ export function PDFWorkspace({
   onPreviewPage,
   onReorderPages,
   onRotatePage,
-  thumbnailSize = 3, // Valeur par défaut (1=petit, 3=moyen, 5=grand)
+  thumbnailSize = 3,
   onChangeThumbnailSize = () => {}
 }: PDFWorkspaceProps) {
   const sensors = useSensors(
@@ -123,6 +123,8 @@ export function PDFWorkspace({
                     onSelect={() => onPageSelect(page.id)}
                     onPreview={() => onPreviewPage(page)}
                     onRotate={onRotatePage}
+                    // Ajouter cette prop pour indiquer si cette page est en cours de glissement
+                    isDragging={activeId === page.id}
                   />
                   
                   {/* Affiche l'indicateur après la page si nécessaire */}

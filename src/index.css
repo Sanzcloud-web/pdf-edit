@@ -1,3 +1,48 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Ajoutez ces styles dans src/index.css ou créez un nouveau fichier CSS et importez-le */
+
+/* Amélioration de l'affichage des PDFs */
+object[type="application/pdf"] {
+    /* Suppression des bordures et contrôles */
+    border: none !important;
+    background: white !important;
+  }
+  
+  /* Masquer les contrôles de PDF dans les miniatures */
+  object[type="application/pdf"]::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Style pour améliorer l'aperçu des pages */
+  .pdf-thumbnail {
+    background: white;
+    transition: all 0.2s ease;
+    transform-origin: center;
+  }
+  
+  /* Classes pour contrôler l'affichage en fonction de la taille */
+  .pdf-thumbnail-small object[type="application/pdf"] {
+    transform: scale(0.5);
+    transform-origin: top left;
+  }
+  
+  .pdf-thumbnail-medium object[type="application/pdf"] {
+    transform: scale(0.7);
+    transform-origin: top left;
+  }
+  
+  /* Style pour la page en cours de prévisualisation */
+  .pdf-preview object[type="application/pdf"] {
+    box-shadow: none;
+    border: none;
+  }
+  
+  /* Force le PDF à s'afficher sans bordure externe */
+  .pdf-container object[type="application/pdf"] {
+    background: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
