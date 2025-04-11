@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Move, RotateCw, RotateCcw, Maximize2 } from 'lucide-react';
+import { Move, RotateCw, RotateCcw, Maximize2, Eye } from 'lucide-react';
 
 // Utilisation directe de l'interface Page depuis les types
 import { Page } from '../types';
@@ -15,7 +15,7 @@ interface PageThumbnailProps {
   onSelect: () => void;
   onPreview: () => void;
   onRotate?: (pageId: string, degrees: number) => void;
-  onResize?: (pageId: string) => void; // Nouvelle prop pour le redimensionnement
+  onResize?: (pageId: string) => void;
   isDragging?: boolean;
 }
 
@@ -58,6 +58,12 @@ export function PageThumbnail({
     }
   };
 
+  // Nouvelle fonction pour gérer l'aperçu avec stopPropagation
+  const handlePreview = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onPreview();
+  };
+
   const getNextRotation = (current: number = 0, increment: number): number => {
     return (current + increment) % 360;
   };
@@ -74,8 +80,10 @@ export function PageThumbnail({
       }`}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
+      // Ajouter onClick directement sur le conteneur principal
+      onClick={handlePreview}
     >
-      <div className="absolute top-2 left-2 z-10">
+      <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           checked={isSelected}
@@ -90,14 +98,30 @@ export function PageThumbnail({
         className="absolute top-2 right-2 z-10 cursor-move p-1.5 rounded-lg bg-white bg-opacity-90 shadow-md opacity-0 group-hover:opacity-100 transition-all"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
+        onClick={(e) => e.stopPropagation()}
       >
         <Move size={16} className="text-gray-600" />
       </motion.div>
 
       {showControls && (
-        <div className="absolute top-10 right-2 z-10 bg-white bg-opacity-90 rounded-lg shadow-md p-1 opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-1">
+        <div 
+          className="absolute top-10 right-2 z-10 bg-white bg-opacity-90 rounded-lg shadow-md p-1 opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Bouton d'aperçu explicite */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handlePreview}
+            className="p-1 rounded-lg text-gray-600 hover:bg-gray-100"
+            title="Aperçu de la page"
+          >
+            <Eye size={16} />
+          </motion.button>
+
           {onRotate && (
             <>
+              <div className="w-full h-px bg-gray-200 my-1"></div>
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -119,7 +143,7 @@ export function PageThumbnail({
             </>
           )}
           
-          {/* Nouveau bouton pour le redimensionnement */}
+          {/* Bouton pour le redimensionnement */}
           {onResize && (
             <>
               <div className="w-full h-px bg-gray-200 my-1"></div>
@@ -137,30 +161,32 @@ export function PageThumbnail({
         </div>
       )}
 
-      <motion.div
-        onClick={onPreview}
-        className="aspect-[3/4] cursor-pointer group-hover:brightness-95 transition-all bg-white"
-        whileHover={{ scale: 1.02 }}
+      <div 
+        className="aspect-[3/4] cursor-pointer group-hover:brightness-95 transition-all bg-white relative"
         style={{
           transform: `rotate(${page.rotation || 0}deg)`,
           transition: 'transform 0.3s ease'
         }}
       >
-        {/* Remplacer iframe par object */}
+        {/* Overlay transparent pour capturer les clics */}
+        <div className="absolute inset-0 z-10" onClick={handlePreview}></div>
+        
+        {/* Object PDF avec pointer-events désactivés */}
         <object
           data={page.thumbnail}
           type="application/pdf"
           className="w-full h-full"
           style={{
             border: 'none',
-            background: 'white'
+            background: 'white',
+            pointerEvents: 'none' // Important: désactive les interactions avec l'objet PDF
           }}
         >
           <div className="flex items-center justify-center h-full bg-gray-100">
             <p className="text-gray-500">Impossible d'afficher le PDF</p>
           </div>
         </object>
-      </motion.div>
+      </div>
 
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
         <span className="text-sm font-medium text-white">
