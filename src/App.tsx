@@ -1,3 +1,5 @@
+// Dans src/App.tsx - Mise à jour pour inclure les nouvelles fonctionnalités
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
@@ -13,6 +15,8 @@ import { TrashBin } from './components/TrashBin';
 import { Toolbar } from './components/Toolbar';
 import { Modal } from './components/Modal';
 import { ExportModal } from './components/ExportModal';
+import { CropModal } from './components/CropModal'; // Nouveau composant
+import { AnnotationEditor } from './components/AnnotationEditor'; // Nouveau composant
 
 function App() {
   const {
@@ -27,6 +31,7 @@ function App() {
     deleteSelectedPages,
     restorePage,
     permanentDeletePage,
+    rotatePDF, // Nouvelle fonction
     undo,
     redo,
     canUndo,
@@ -38,6 +43,13 @@ function App() {
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportMode, setExportMode] = useState<'all' | 'selection'>('all');
+  
+  // Nouveaux états pour les fonctionnalités
+  const [thumbnailSize, setThumbnailSize] = useState(3);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [pageToCrop, setPageToCrop] = useState<string | null>(null);
+  const [showAnnotationEditor, setShowAnnotationEditor] = useState(false);
+  const [pageToAnnotate, setPageToAnnotate] = useState<string | null>(null);
 
   const handleExportSelection = () => {
     setExportMode('selection');
@@ -47,6 +59,29 @@ function App() {
   const handleExportAll = () => {
     setExportMode('all');
     setShowExportModal(true);
+  };
+  
+  // Gestionnaires pour les nouvelles fonctionnalités
+  const handleCropPage = (pageId: string) => {
+    setPageToCrop(pageId);
+    setShowCropModal(true);
+  };
+  
+  const handleAnnotatePage = (pageId: string) => {
+    setPageToAnnotate(pageId);
+    setShowAnnotationEditor(true);
+  };
+  
+  const handleApplyCrop = (cropArea: { x: number, y: number, width: number, height: number }) => {
+    // Cette fonction serait implémentée dans usePDFManager et appelée ici
+    console.log('Crop applied with:', cropArea);
+    setShowCropModal(false);
+  };
+  
+  const handleSaveAnnotation = (annotatedPdfData: Uint8Array) => {
+    // Cette fonction serait implémentée dans usePDFManager et appelée ici
+    console.log('Annotation saved');
+    setShowAnnotationEditor(false);
   };
 
   return (
@@ -88,6 +123,9 @@ function App() {
               onPageSelect={handlePageSelect}
               onPreviewPage={setPreviewPage}
               onReorderPages={reorderPages}
+              onRotatePage={rotatePDF} // Ajout de la prop
+              thumbnailSize={thumbnailSize} // Ajout de la prop
+              onChangeThumbnailSize={setThumbnailSize} // Ajout de la prop
             />
           )}
 
@@ -113,12 +151,27 @@ function App() {
               <h2 className="text-2xl font-semibold text-gray-800">
                 Page {previewPage.number}
               </h2>
-              <button
-                onClick={() => setPreviewPage(null)}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <X size={24} />
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Ajout des boutons d'action pour le recadrage et les annotations */}
+                <button
+                  onClick={() => handleCropPage(previewPage.id)}
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-sm"
+                >
+                  Recadrer
+                </button>
+                <button
+                  onClick={() => handleAnnotatePage(previewPage.id)}
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-sm"
+                >
+                  Annoter
+                </button>
+                <button
+                  onClick={() => setPreviewPage(null)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
             </div>
             <iframe
               src={previewPage.thumbnail}
@@ -135,6 +188,24 @@ function App() {
         onExport={exportPDF}
         mode={exportMode}
       />
+      
+      {/* Nouveaux modals pour les fonctionnalités */}
+      {showCropModal && pageToCrop && (
+        <CropModal
+          isOpen={showCropModal}
+          onClose={() => setShowCropModal(false)}
+          pageUrl={pages.find(p => p.id === pageToCrop)?.thumbnail || ''}
+          onCrop={handleApplyCrop}
+        />
+      )}
+      
+      {showAnnotationEditor && pageToAnnotate && (
+        <AnnotationEditor
+          pdfUrl={pages.find(p => p.id === pageToAnnotate)?.thumbnail || ''}
+          onSave={handleSaveAnnotation}
+          onCancel={() => setShowAnnotationEditor(false)}
+        />
+      )}
     </div>
   );
 }

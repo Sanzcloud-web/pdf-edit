@@ -1,4 +1,3 @@
-import React from 'react';
 import { ExportOptions } from './ExportOptions';
 import { ExportOptions as ExportOptionsType } from '../types';
 

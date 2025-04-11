@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Download, Trash2, Undo2, Redo2, FileDown } from 'lucide-react';
 

@@ -1,16 +1,37 @@
+// Dans src/hooks/usePDFManager.ts - Correction de la fonction de rotation
+
 import { useState, useCallback } from 'react';
 import { Page, ExportOptions } from '../types';
 import { usePDFHistory } from './usePDFHistory';
-import { mergePages } from '../utils/pdfUtils';
+import { mergePages, rotatePage } from '../utils/pdfUtils'; 
 import { toast } from 'react-hot-toast';
 
 export function usePDFManager() {
+  // États existants
   const [pages, setPages] = useState<Page[]>([]);
   const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set());
   const [deletedPages, setDeletedPages] = useState<Page[]>([]);
   const [previewPage, setPreviewPage] = useState<Page | null>(null);
   const { addToHistory, undo: undoHistory, redo: redoHistory, canUndo, canRedo } = usePDFHistory();
 
+  // Fonction de rotation corrigée
+  const rotatePDF = useCallback(async (pageId: string, degrees: number) => {
+    const pageIndex = pages.findIndex(page => page.id === pageId);
+    if (pageIndex !== -1) {
+      const updatedPage = await rotatePage(pages[pageIndex], degrees);
+      
+      setPages(prevPages => {
+        const newPages = [...prevPages];
+        newPages[pageIndex] = updatedPage;
+        addToHistory(newPages);
+        return newPages;
+      });
+      
+      toast.success('Page pivotée');
+    }
+  }, [pages, addToHistory]);
+  
+  // Autres fonctions existantes
   const addPages = useCallback((newPages: Page[]) => {
     setPages(prevPages => {
       const updatedPages = [...prevPages, ...newPages];
@@ -117,6 +138,7 @@ export function usePDFManager() {
     deleteSelectedPages,
     restorePage,
     permanentDeletePage,
+    rotatePDF, // Fonction de rotation corrigée
     undo,
     redo,
     canUndo,
