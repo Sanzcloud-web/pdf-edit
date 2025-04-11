@@ -1,10 +1,10 @@
-// Dans src/components/PageThumbnail.tsx
+// Mise à jour de src/components/PageThumbnail.tsx
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Move, RotateCw, RotateCcw } from 'lucide-react';
+import { Move, RotateCw, RotateCcw, Maximize2 } from 'lucide-react';
 
 // Utilisation directe de l'interface Page depuis les types
 import { Page } from '../types';
@@ -15,6 +15,7 @@ interface PageThumbnailProps {
   onSelect: () => void;
   onPreview: () => void;
   onRotate?: (pageId: string, degrees: number) => void;
+  onResize?: (pageId: string) => void; // Nouvelle prop pour le redimensionnement
   isDragging?: boolean;
 }
 
@@ -24,6 +25,7 @@ export function PageThumbnail({
   onSelect, 
   onPreview,
   onRotate,
+  onResize,
   isDragging = false
 }: PageThumbnailProps) {
   const {
@@ -40,12 +42,19 @@ export function PageThumbnail({
     opacity: isDragging ? 0 : 1
   };
 
-  const [showRotateControls, setShowRotateControls] = useState(false);
+  const [showControls, setShowControls] = useState(false);
 
   const handleRotate = (e: React.MouseEvent, degrees: number) => {
     e.stopPropagation();
     if (onRotate) {
       onRotate(page.id, degrees);
+    }
+  };
+  
+  const handleResize = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onResize) {
+      onResize(page.id);
     }
   };
 
@@ -63,8 +72,8 @@ export function PageThumbnail({
       className={`relative group rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all ${
         isSelected ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-blue-200'
       }`}
-      onMouseEnter={() => setShowRotateControls(true)}
-      onMouseLeave={() => setShowRotateControls(false)}
+      onMouseEnter={() => setShowControls(true)}
+      onMouseLeave={() => setShowControls(false)}
     >
       <div className="absolute top-2 left-2 z-10">
         <input
@@ -85,26 +94,46 @@ export function PageThumbnail({
         <Move size={16} className="text-gray-600" />
       </motion.div>
 
-      {showRotateControls && onRotate && (
+      {showControls && (
         <div className="absolute top-10 right-2 z-10 bg-white bg-opacity-90 rounded-lg shadow-md p-1 opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-1">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={(e) => handleRotate(e, getNextRotation(page.rotation, 90))}
-            className="p-1 rounded-lg text-gray-600 hover:bg-gray-100"
-            title="Pivoter à 90° dans le sens horaire"
-          >
-            <RotateCw size={16} />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={(e) => handleRotate(e, getNextRotation(page.rotation, 270))}
-            className="p-1 rounded-lg text-gray-600 hover:bg-gray-100"
-            title="Pivoter à 90° dans le sens anti-horaire"
-          >
-            <RotateCcw size={16} />
-          </motion.button>
+          {onRotate && (
+            <>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => handleRotate(e, getNextRotation(page.rotation, 90))}
+                className="p-1 rounded-lg text-gray-600 hover:bg-gray-100"
+                title="Pivoter à 90° dans le sens horaire"
+              >
+                <RotateCw size={16} />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => handleRotate(e, getNextRotation(page.rotation, 270))}
+                className="p-1 rounded-lg text-gray-600 hover:bg-gray-100"
+                title="Pivoter à 90° dans le sens anti-horaire"
+              >
+                <RotateCcw size={16} />
+              </motion.button>
+            </>
+          )}
+          
+          {/* Nouveau bouton pour le redimensionnement */}
+          {onResize && (
+            <>
+              <div className="w-full h-px bg-gray-200 my-1"></div>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleResize}
+                className="p-1 rounded-lg text-gray-600 hover:bg-gray-100"
+                title="Redimensionner cette page"
+              >
+                <Maximize2 size={16} />
+              </motion.button>
+            </>
+          )}
         </div>
       )}
 

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Page, ExportOptions } from '../types';
 import { usePDFHistory } from './usePDFHistory';
-import { mergePages, rotatePage } from '../utils/pdfUtils';
+import { mergePages, rotatePage,resizePage, resizeAllPages  } from '../utils/pdfUtils';
 import { toast } from 'react-hot-toast';
 
 export function usePDFManager() {
@@ -125,6 +125,65 @@ export function usePDFManager() {
     toast.success(`PDF ${exportMode === 'all' ? '' : 'sélectionné '}exporté avec succès`);
   }, [pages, selectedPages]);
 
+  // Fonction pour redimensionner une page spécifique
+const resizeSinglePage = useCallback(async (pageId: string) => {
+  const pageIndex = pages.findIndex(page => page.id === pageId);
+  if (pageIndex !== -1) {
+    try {
+      const updatedPage = await resizePage(pages[pageIndex]);
+      
+      setPages(prevPages => {
+        const newPages = [...prevPages];
+        newPages[pageIndex] = updatedPage;
+        addToHistory(newPages);
+        return newPages;
+      });
+      
+      toast.success('Page redimensionnée');
+    } catch (error) {
+      console.error("Erreur lors du redimensionnement:", error);
+      toast.error('Erreur lors du redimensionnement de la page');
+    }
+  }
+}, [pages, addToHistory]);
+
+// Fonction pour redimensionner toutes les pages ou une sélection
+const resizePages = useCallback(async (mode: 'all' | 'selection' = 'all') => {
+  try {
+    const pagesToResize = mode === 'all' 
+      ? pages 
+      : pages.filter(page => selectedPages.has(page.id));
+    
+    if (pagesToResize.length === 0) {
+      toast.error('Aucune page à redimensionner');
+      return;
+    }
+    
+    const resizedPages = await resizeAllPages(pagesToResize);
+    
+    // Mettre à jour les pages dans l'état
+    setPages(prevPages => {
+      const newPages = [...prevPages];
+      
+      // Remplacer chaque page redimensionnée
+      for (let i = 0; i < resizedPages.length; i++) {
+        const originalIndex = prevPages.findIndex(p => p.id === pagesToResize[i].id);
+        if (originalIndex !== -1) {
+          newPages[originalIndex] = resizedPages[i];
+        }
+      }
+      
+      addToHistory(newPages);
+      return newPages;
+    });
+    
+    toast.success(`${mode === 'all' ? 'Toutes les pages' : 'Pages sélectionnées'} redimensionnées`);
+  } catch (error) {
+    console.error("Erreur lors du redimensionnement:", error);
+    toast.error("Erreur lors du redimensionnement des pages");
+  }
+}, [pages, selectedPages, addToHistory]);
+
   return {
     pages,
     selectedPages,
@@ -134,6 +193,8 @@ export function usePDFManager() {
     addPages,
     reorderPages,
     handlePageSelect,
+    resizeSinglePage,
+    resizePages,
     deleteSelectedPages,
     restorePage,
     permanentDeletePage,

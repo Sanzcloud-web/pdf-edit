@@ -1,4 +1,4 @@
-// Dans src/App.tsx - Version corrigée pour résoudre le problème des hooks
+// Mise à jour de src/App.tsx
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -33,6 +33,8 @@ function App() {
     restorePage,
     permanentDeletePage,
     rotatePDF,
+    resizeSinglePage,  // Nouvelle fonction
+    resizePages,       // Nouvelle fonction
     undo,
     redo,
     canUndo,
@@ -58,6 +60,14 @@ function App() {
     setShowExportModal(true);
   };
   
+  const handleResizeAll = () => {
+    resizePages('all');
+  };
+  
+  const handleResizeSelection = () => {
+    resizePages('selection');
+  };
+  
   
 
   return (
@@ -69,7 +79,7 @@ function App() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl shadow-xl p-8"
         >
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
             <motion.h1
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -85,6 +95,8 @@ function App() {
               onExport={handleExportAll}
               onExportSelection={handleExportSelection}
               onDelete={deleteSelectedPages}
+              onResize={handleResizeAll}
+              onResizeSelection={handleResizeSelection}
               hasSelection={hasSelection}
               hasPages={hasPages}
             />
@@ -100,6 +112,7 @@ function App() {
               onPreviewPage={setPreviewPage}
               onReorderPages={reorderPages}
               onRotatePage={rotatePDF}
+              onResizePage={resizeSinglePage} // Nouvelle prop
               thumbnailSize={thumbnailSize}
               onChangeThumbnailSize={setThumbnailSize}
             />

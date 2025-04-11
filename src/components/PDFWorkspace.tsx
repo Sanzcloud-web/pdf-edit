@@ -1,4 +1,4 @@
-// Dans src/components/PDFWorkspace.tsx - Modification pour corriger l'effet visuel du drag-and-drop
+// Mise à jour de src/components/PDFWorkspace.tsx
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,6 +30,7 @@ interface PDFWorkspaceProps {
   onPreviewPage: (page: Page) => void;
   onReorderPages: (oldIndex: number, newIndex: number) => void;
   onRotatePage?: (pageId: string, degrees: number) => void;
+  onResizePage?: (pageId: string) => void; // Nouvelle prop
   thumbnailSize?: number;
   onChangeThumbnailSize?: (size: number) => void;
 }
@@ -41,6 +42,7 @@ export function PDFWorkspace({
   onPreviewPage,
   onReorderPages,
   onRotatePage,
+  onResizePage, // Nouvelle prop
   thumbnailSize = 3,
   onChangeThumbnailSize = () => {}
 }: PDFWorkspaceProps) {
@@ -123,6 +125,7 @@ export function PDFWorkspace({
                     onSelect={() => onPageSelect(page.id)}
                     onPreview={() => onPreviewPage(page)}
                     onRotate={onRotatePage}
+                    onResize={onResizePage} // Nouvelle prop
                     // Ajouter cette prop pour indiquer si cette page est en cours de glissement
                     isDragging={activeId === page.id}
                   />

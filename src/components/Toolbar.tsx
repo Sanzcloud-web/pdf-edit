@@ -1,5 +1,7 @@
+// Mise à jour de src/components/Toolbar.tsx
+
 import { motion } from 'framer-motion';
-import { Download, Trash2, Undo2, Redo2, FileDown } from 'lucide-react';
+import { Download, Trash2, Undo2, Redo2, FileDown, Maximize2 } from 'lucide-react';
 
 interface ToolbarProps {
   onUndo: () => void;
@@ -9,6 +11,8 @@ interface ToolbarProps {
   onExport: () => void;
   onExportSelection: () => void;
   onDelete: () => void;
+  onResize: () => void;
+  onResizeSelection: () => void;
   hasSelection: boolean;
   hasPages: boolean;
 }
@@ -21,6 +25,8 @@ export function Toolbar({
   onExport,
   onExportSelection,
   onDelete,
+  onResize,
+  onResizeSelection,
   hasSelection,
   hasPages,
 }: ToolbarProps) {
@@ -28,7 +34,7 @@ export function Toolbar({
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-3"
+      className="flex items-center gap-3 flex-wrap"
     >
       <motion.button
         whileHover={{ scale: 1.05 }}
@@ -93,6 +99,31 @@ export function Toolbar({
       >
         <Trash2 size={20} />
         Supprimer
+      </motion.button>
+      
+      {/* Nouveaux boutons pour le redimensionnement */}
+      <div className="w-px h-6 bg-gray-300 mx-2" />
+      
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onResize}
+        disabled={!hasPages}
+        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-violet-600 text-white rounded-lg hover:from-purple-700 hover:to-violet-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Maximize2 size={20} />
+        Redimensionner tout
+      </motion.button>
+      
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onResizeSelection}
+        disabled={!hasSelection}
+        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Maximize2 size={20} />
+        Redimensionner la sélection
       </motion.button>
     </motion.div>
   );
