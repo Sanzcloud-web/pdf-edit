@@ -1,9 +1,9 @@
-// Dans src/App.tsx - Mise à jour pour inclure les nouvelles fonctionnalités
+// Dans src/App.tsx - Version corrigée pour résoudre le problème des hooks
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
-import { X } from 'lucide-react';
+import { X, Scissors, FileEdit } from 'lucide-react';
 
 // Hooks
 import { usePDFManager } from './hooks/usePDFManager';
@@ -15,10 +15,14 @@ import { TrashBin } from './components/TrashBin';
 import { Toolbar } from './components/Toolbar';
 import { Modal } from './components/Modal';
 import { ExportModal } from './components/ExportModal';
-import { CropModal } from './components/CropModal'; // Nouveau composant
-import { AnnotationEditor } from './components/AnnotationEditor'; // Nouveau composant
+import { CropModal } from './components/CropModal';
+import { AnnotationEditor } from './components/AnnotationEditor';
 
 function App() {
+  // Hook principal de gestion PDF - important de le garder en premier
+  const pdfManager = usePDFManager();
+  
+  // Extraire les propriétés du gestionnaire de PDF après l'appel du hook
   const {
     pages,
     selectedPages,
@@ -31,7 +35,9 @@ function App() {
     deleteSelectedPages,
     restorePage,
     permanentDeletePage,
-    rotatePDF, // Nouvelle fonction
+    rotatePDF,
+    cropPDF,
+    annotatePDF,
     undo,
     redo,
     canUndo,
@@ -39,18 +45,18 @@ function App() {
     exportPDF,
     hasSelection,
     hasPages
-  } = usePDFManager();
+  } = pdfManager;
 
+  // États locaux pour l'UI - garder le même ordre que précédemment
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportMode, setExportMode] = useState<'all' | 'selection'>('all');
-  
-  // Nouveaux états pour les fonctionnalités
   const [thumbnailSize, setThumbnailSize] = useState(3);
   const [showCropModal, setShowCropModal] = useState(false);
   const [pageToCrop, setPageToCrop] = useState<string | null>(null);
   const [showAnnotationEditor, setShowAnnotationEditor] = useState(false);
   const [pageToAnnotate, setPageToAnnotate] = useState<string | null>(null);
 
+  // Gestionnaires d'événements
   const handleExportSelection = () => {
     setExportMode('selection');
     setShowExportModal(true);
@@ -61,7 +67,6 @@ function App() {
     setShowExportModal(true);
   };
   
-  // Gestionnaires pour les nouvelles fonctionnalités
   const handleCropPage = (pageId: string) => {
     setPageToCrop(pageId);
     setShowCropModal(true);
@@ -73,15 +78,17 @@ function App() {
   };
   
   const handleApplyCrop = (cropArea: { x: number, y: number, width: number, height: number }) => {
-    // Cette fonction serait implémentée dans usePDFManager et appelée ici
-    console.log('Crop applied with:', cropArea);
-    setShowCropModal(false);
+    if (pageToCrop) {
+      cropPDF(pageToCrop, cropArea);
+      setShowCropModal(false);
+    }
   };
   
   const handleSaveAnnotation = (annotatedPdfData: Uint8Array) => {
-    // Cette fonction serait implémentée dans usePDFManager et appelée ici
-    console.log('Annotation saved');
-    setShowAnnotationEditor(false);
+    if (pageToAnnotate) {
+      annotatePDF(pageToAnnotate, annotatedPdfData);
+      setShowAnnotationEditor(false);
+    }
   };
 
   return (
@@ -123,9 +130,9 @@ function App() {
               onPageSelect={handlePageSelect}
               onPreviewPage={setPreviewPage}
               onReorderPages={reorderPages}
-              onRotatePage={rotatePDF} // Ajout de la prop
-              thumbnailSize={thumbnailSize} // Ajout de la prop
-              onChangeThumbnailSize={setThumbnailSize} // Ajout de la prop
+              onRotatePage={rotatePDF}
+              thumbnailSize={thumbnailSize}
+              onChangeThumbnailSize={setThumbnailSize}
             />
           )}
 
@@ -152,19 +159,24 @@ function App() {
                 Page {previewPage.number}
               </h2>
               <div className="flex items-center gap-2">
-                {/* Ajout des boutons d'action pour le recadrage et les annotations */}
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleCropPage(previewPage.id)}
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-sm"
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-sm flex items-center gap-1"
                 >
+                  <Scissors size={16} />
                   Recadrer
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleAnnotatePage(previewPage.id)}
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-sm"
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-sm flex items-center gap-1"
                 >
+                  <FileEdit size={16} />
                   Annoter
-                </button>
+                </motion.button>
                 <button
                   onClick={() => setPreviewPage(null)}
                   className="text-gray-500 hover:text-gray-700 transition-colors"
@@ -189,7 +201,6 @@ function App() {
         mode={exportMode}
       />
       
-      {/* Nouveaux modals pour les fonctionnalités */}
       {showCropModal && pageToCrop && (
         <CropModal
           isOpen={showCropModal}

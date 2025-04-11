@@ -1,9 +1,9 @@
-// Dans src/hooks/usePDFManager.ts - Correction de la fonction de rotation
+// Dans src/hooks/usePDFManager.ts - Ajout des fonctions de recadrage et d'annotation
 
 import { useState, useCallback } from 'react';
 import { Page, ExportOptions } from '../types';
 import { usePDFHistory } from './usePDFHistory';
-import { mergePages, rotatePage } from '../utils/pdfUtils'; 
+import { mergePages, rotatePage, cropPage } from '../utils/pdfUtils'; 
 import { toast } from 'react-hot-toast';
 
 export function usePDFManager() {
@@ -14,7 +14,7 @@ export function usePDFManager() {
   const [previewPage, setPreviewPage] = useState<Page | null>(null);
   const { addToHistory, undo: undoHistory, redo: redoHistory, canUndo, canRedo } = usePDFHistory();
 
-  // Fonction de rotation corrigée
+  // Fonction de rotation
   const rotatePDF = useCallback(async (pageId: string, degrees: number) => {
     const pageIndex = pages.findIndex(page => page.id === pageId);
     if (pageIndex !== -1) {
@@ -30,6 +30,66 @@ export function usePDFManager() {
       toast.success('Page pivotée');
     }
   }, [pages, addToHistory]);
+  
+  // Nouvelle fonction de recadrage
+  const cropPDF = useCallback(async (pageId: string, cropArea: { x: number, y: number, width: number, height: number }) => {
+    const pageIndex = pages.findIndex(page => page.id === pageId);
+    if (pageIndex !== -1) {
+      try {
+        const updatedPage = await cropPage(pages[pageIndex], cropArea);
+        
+        setPages(prevPages => {
+          const newPages = [...prevPages];
+          newPages[pageIndex] = updatedPage;
+          addToHistory(newPages);
+          return newPages;
+        });
+        
+        // Mettre à jour la page de prévisualisation si elle est actuellement affichée
+        if (previewPage && previewPage.id === pageId) {
+          setPreviewPage(updatedPage);
+        }
+        
+        toast.success('Page recadrée avec succès');
+      } catch (error) {
+        console.error('Erreur lors du recadrage:', error);
+        toast.error('Échec du recadrage de la page');
+      }
+    }
+  }, [pages, addToHistory, previewPage]);
+  
+  // Nouvelle fonction d'annotation
+  const annotatePDF = useCallback(async (pageId: string, annotatedPdfData: Uint8Array) => {
+    const pageIndex = pages.findIndex(page => page.id === pageId);
+    if (pageIndex !== -1) {
+      try {
+        // Créer une nouvelle page avec les données PDF annotées
+        const updatedPage: Page = {
+          ...pages[pageIndex],
+          data: annotatedPdfData,
+          // Recréer la vignette à partir des nouvelles données PDF
+          thumbnail: URL.createObjectURL(new Blob([annotatedPdfData], { type: 'application/pdf' }))
+        };
+        
+        setPages(prevPages => {
+          const newPages = [...prevPages];
+          newPages[pageIndex] = updatedPage;
+          addToHistory(newPages);
+          return newPages;
+        });
+        
+        // Mettre à jour la page de prévisualisation si elle est actuellement affichée
+        if (previewPage && previewPage.id === pageId) {
+          setPreviewPage(updatedPage);
+        }
+        
+        toast.success('Page annotée avec succès');
+      } catch (error) {
+        console.error('Erreur lors de l\'annotation:', error);
+        toast.error('Échec de l\'annotation de la page');
+      }
+    }
+  }, [pages, addToHistory, previewPage]);
   
   // Autres fonctions existantes
   const addPages = useCallback((newPages: Page[]) => {
@@ -138,7 +198,9 @@ export function usePDFManager() {
     deleteSelectedPages,
     restorePage,
     permanentDeletePage,
-    rotatePDF, // Fonction de rotation corrigée
+    rotatePDF,
+    cropPDF, // Nouvelle fonction de recadrage
+    annotatePDF, // Nouvelle fonction d'annotation
     undo,
     redo,
     canUndo,
