@@ -1,6 +1,6 @@
 // Dans src/utils/pdfUtils.ts - Implémentation de la fonction de recadrage
 
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
 import { Page } from '../types';
 
 export async function extractPagesFromPDF(file: File): Promise<Page[]> {
@@ -37,21 +37,18 @@ export async function mergePages(pages: Page[]): Promise<Uint8Array> {
   return mergedPdf.save();
 }
 
-export async function rotatePage(page: Page, degrees: number): Promise<Page> {
+export async function rotatePage(page: Page, angle: number): Promise<Page> {
   const pdfDoc = await PDFDocument.load(page.data);
   const pdfPage = pdfDoc.getPages()[0];
-  
-  pdfPage.setRotation({
-    type: 'degrees' as any,
-    angle: degrees
-  });
-  
+
+  pdfPage.setRotation(degrees(angle));
+
   const pdfBytes = await pdfDoc.save();
-  
+
   return {
     ...page,
     data: pdfBytes,
-    rotation: degrees,
+    rotation: angle,
     thumbnail: URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }))
   };
 }
@@ -194,4 +191,77 @@ export async function resizeAllPages(pages: Page[]): Promise<Page[]> {
   }
   
   return resizedPages;
+}
+
+export interface TextOptions {
+  x: number;
+  y: number;
+  size?: number;
+  color?: [number, number, number];
+}
+
+export async function addTextToPage(
+  page: Page,
+  text: string,
+  options: TextOptions
+): Promise<Page> {
+  const pdfDoc = await PDFDocument.load(page.data);
+  const pdfPage = pdfDoc.getPages()[0];
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  pdfPage.drawText(text, {
+    x: options.x,
+    y: options.y,
+    size: options.size ?? 12,
+    font,
+    color: options.color ? rgb(options.color[0], options.color[1], options.color[2]) : undefined
+  });
+
+  const pdfBytes = await pdfDoc.save();
+
+  return {
+    ...page,
+    data: pdfBytes,
+    thumbnail: URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }))
+  };
+}
+
+export interface ImageOptions {
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+}
+
+export async function addImageToPage(
+  page: Page,
+  imageFile: File,
+  options: ImageOptions
+): Promise<Page> {
+  const pdfDoc = await PDFDocument.load(page.data);
+  const pdfPage = pdfDoc.getPages()[0];
+  const imageBytes = await imageFile.arrayBuffer();
+
+  const embed = imageFile.type === 'image/png'
+    ? await pdfDoc.embedPng(imageBytes)
+    : await pdfDoc.embedJpg(imageBytes);
+
+  const dims = embed.scale(1);
+  const width = options.width ?? dims.width;
+  const height = options.height ?? dims.height;
+
+  pdfPage.drawImage(embed, {
+    x: options.x,
+    y: options.y,
+    width,
+    height
+  });
+
+  const pdfBytes = await pdfDoc.save();
+
+  return {
+    ...page,
+    data: pdfBytes,
+    thumbnail: URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }))
+  };
 }

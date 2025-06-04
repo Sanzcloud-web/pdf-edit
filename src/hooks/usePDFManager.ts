@@ -3,7 +3,14 @@
 import { useState, useCallback } from 'react';
 import { Page, ExportOptions } from '../types';
 import { usePDFHistory } from './usePDFHistory';
-import { mergePages, rotatePage,resizePage, resizeAllPages  } from '../utils/pdfUtils';
+import {
+  mergePages,
+  rotatePage,
+  resizePage,
+  resizeAllPages,
+  addTextToPage,
+  addImageToPage
+} from '../utils/pdfUtils';
 import { toast } from 'react-hot-toast';
 
 export function usePDFManager() {
@@ -125,6 +132,44 @@ export function usePDFManager() {
     toast.success(`PDF ${exportMode === 'all' ? '' : 'sélectionné '}exporté avec succès`);
   }, [pages, selectedPages]);
 
+  const insertText = useCallback(
+    async (pageId: string, text: string, options: Parameters<typeof addTextToPage>[2]) => {
+      const pageIndex = pages.findIndex(p => p.id === pageId);
+      if (pageIndex !== -1) {
+        const updatedPage = await addTextToPage(pages[pageIndex], text, options);
+
+        setPages(prev => {
+          const newPages = [...prev];
+          newPages[pageIndex] = updatedPage;
+          addToHistory(newPages);
+          return newPages;
+        });
+
+        toast.success('Texte ajouté');
+      }
+    },
+    [pages, addToHistory]
+  );
+
+  const insertImage = useCallback(
+    async (pageId: string, file: File, options: Parameters<typeof addImageToPage>[2]) => {
+      const pageIndex = pages.findIndex(p => p.id === pageId);
+      if (pageIndex !== -1) {
+        const updatedPage = await addImageToPage(pages[pageIndex], file, options);
+
+        setPages(prev => {
+          const newPages = [...prev];
+          newPages[pageIndex] = updatedPage;
+          addToHistory(newPages);
+          return newPages;
+        });
+
+        toast.success('Image ajoutée');
+      }
+    },
+    [pages, addToHistory]
+  );
+
   // Fonction pour redimensionner une page spécifique
 const resizeSinglePage = useCallback(async (pageId: string) => {
   const pageIndex = pages.findIndex(page => page.id === pageId);
@@ -193,6 +238,8 @@ const resizePages = useCallback(async (mode: 'all' | 'selection' = 'all') => {
     addPages,
     reorderPages,
     handlePageSelect,
+    insertText,
+    insertImage,
     resizeSinglePage,
     resizePages,
     deleteSelectedPages,
